@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cashflow Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div class="bg-grid"></div>
+
+    <header class="topbar panel">
+      <div>
+        <div class="eyebrow">Cloudflare API Gateway + GitHub Pages</div>
+        <h1>Cashflow Command Center</h1>
+        <div class="subline">Nguồn dữ liệu: <span id="sourceText">đang kết nối...</span></div>
+      </div>
+      <div class="top-actions">
+        <button id="refreshBtn" class="btn">Làm mới</button>
+      </div>
+    </header>
+
+    <section class="summary-grid">
+      <div class="panel metric-card">
+        <div class="metric-label">Ngày dữ liệu</div>
+        <div class="metric-value" id="asOf">--</div>
+      </div>
+      <div class="panel metric-card">
+        <div class="metric-label">Cập nhật lúc</div>
+        <div class="metric-value small" id="updatedAt">--</div>
+      </div>
+      <div class="panel metric-card">
+        <div class="metric-label">Tổng giá trị gom hôm nay</div>
+        <div class="metric-value positive" id="gomValue">--</div>
+      </div>
+      <div class="panel metric-card">
+        <div class="metric-label">Tổng giá trị xả hôm nay</div>
+        <div class="metric-value negative" id="xaValue">--</div>
+      </div>
+      <div class="panel metric-card">
+        <div class="metric-label">Phe chi phối</div>
+        <div class="metric-value accent" id="dominantSide">--</div>
+      </div>
+      <div class="panel metric-card">
+        <div class="metric-label">Mã tâm điểm</div>
+        <div class="metric-value" id="leadPair">--</div>
+      </div>
+    </section>
+
+    <main class="main-grid">
+      <section class="panel board-panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">Top 10 mã đang được gom</div>
+            <div class="panel-subtitle">Ưu tiên theo hot score từ API</div>
+          </div>
+          <div class="panel-pill positive" id="gomCount">0 mã</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Mã</th>
+                <th>Điểm</th>
+                <th>Net hôm nay</th>
+                <th>Giá trị hôm nay</th>
+                <th>Net 7d</th>
+                <th>Xu hướng</th>
+                <th>Nhãn</th>
+              </tr>
+            </thead>
+            <tbody id="gomTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel board-panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">Top 10 mã đang bị xả</div>
+            <div class="panel-subtitle">Tách riêng khỏi bảng gom để tránh nhiễu</div>
+          </div>
+          <div class="panel-pill negative" id="xaCount">0 mã</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Mã</th>
+                <th>Điểm</th>
+                <th>Net hôm nay</th>
+                <th>Giá trị hôm nay</th>
+                <th>Net 7d</th>
+                <th>Xu hướng</th>
+                <th>Nhãn</th>
+              </tr>
+            </thead>
+            <tbody id="xaTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel side-panel">
+        <div class="panel-head">
+          <div class="panel-title">Tín hiệu nổi bật</div>
+        </div>
+        <div class="stack" id="highlights"></div>
+      </section>
+
+      <section class="panel side-panel">
+        <div class="panel-head">
+          <div class="panel-title">Nhiệt ngành</div>
+        </div>
+        <div class="stack" id="sectorHeat"></div>
+      </section>
+
+      <section class="panel side-panel full-span">
+        <div class="panel-head">
+          <div class="panel-title">Nhật ký API</div>
+        </div>
+        <div id="statusLog" class="status-log"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
