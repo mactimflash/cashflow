@@ -4,129 +4,175 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cashflow Command Center</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <meta name="description" content="Bản Đồ Dòng Tiền Dựa Trên Hành Vi Giao Dịch Của SMART MONEY" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="./favicon.ico" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="app-shell">
-    <div class="bg-grid"></div>
+  <div class="app-shell terminal-shell">
+    <div class="ambient-grid"></div>
+    <div class="scanline"></div>
+    <div class="noise-overlay"></div>
 
-    <header class="topbar panel">
-      <div>
-        <div class="eyebrow">Cloudflare API Gateway + GitHub Pages</div>
-        <h1>Cashflow Command Center</h1>
-        <div class="subline">Nguồn dữ liệu: <span id="sourceText">đang kết nối...</span></div>
+    <!-- TOPBAR -->
+    <header class="topbar panel panel-thin">
+      <div class="brand-group">
+        <div class="brand-block">
+          <div class="brand brand-terminal">SMART MONEY</div>
+          <div class="subbrand">Cashflow Command Center</div>
+        </div>
+        <span class="tag live">LIVE MONITORING</span>
       </div>
-      <div class="top-actions">
-        <button id="refreshBtn" class="btn">Làm mới</button>
-      </div>
+
+      <div class="top-metrics" id="topMetrics"></div>
     </header>
 
-    <section class="summary-grid">
-      <div class="panel metric-card">
-        <div class="metric-label">Ngày dữ liệu</div>
-        <div class="metric-value" id="asOf">--</div>
+    <!-- HERO / COMMAND HEADER -->
+    <section class="hero-banner panel">
+      <div class="hero-copy">
+        <div class="eyebrow">MARKET INTELLIGENCE GRID</div>
+        <h1>Bản Đồ Dòng Tiền Dựa Trên Hành Vi Giao Dịch Của SMART MONEY</h1>
+        <p class="hero-sub">
+          Trung tâm giám sát dòng tiền, tập trung vào các mã đang được gom mạnh,
+          bị xả mạnh và sự dịch chuyển theo từng nhóm ngành.
+        </p>
       </div>
-      <div class="panel metric-card">
-        <div class="metric-label">Cập nhật lúc</div>
-        <div class="metric-value small" id="updatedAt">--</div>
-      </div>
-      <div class="panel metric-card">
-        <div class="metric-label">Tổng giá trị gom hôm nay</div>
-        <div class="metric-value positive" id="gomValue">--</div>
-      </div>
-      <div class="panel metric-card">
-        <div class="metric-label">Tổng giá trị xả hôm nay</div>
-        <div class="metric-value negative" id="xaValue">--</div>
-      </div>
-      <div class="panel metric-card">
-        <div class="metric-label">Phe chi phối</div>
-        <div class="metric-value accent" id="dominantSide">--</div>
-      </div>
-      <div class="panel metric-card">
-        <div class="metric-label">Mã tâm điểm</div>
-        <div class="metric-value" id="leadPair">--</div>
+
+      <div class="hero-status-grid">
+        <div class="hero-kpi">
+          <div class="hero-kpi-label">PHE CHI PHỐI</div>
+          <div class="hero-kpi-value" id="dominantSide">--</div>
+        </div>
+        <div class="hero-kpi">
+          <div class="hero-kpi-label">DẪN ĐẦU GOM</div>
+          <div class="hero-kpi-value" id="leadGom">--</div>
+        </div>
+        <div class="hero-kpi">
+          <div class="hero-kpi-label">DẪN ĐẦU XẢ</div>
+          <div class="hero-kpi-value" id="leadXa">--</div>
+        </div>
       </div>
     </section>
 
-    <main class="main-grid">
-      <section class="panel board-panel">
-        <div class="panel-head">
+    <!-- MAIN LAYOUT -->
+    <main class="layout terminal-layout">
+      <!-- LEFT -->
+      <aside class="left-rail">
+        <section class="panel rail-panel">
+          <div class="panel-title">TỔNG QUAN THỊ TRƯỜNG</div>
+          <div id="summaryCards" class="stack"></div>
+        </section>
+
+        <section class="panel rail-panel">
+          <div class="panel-title">TÍN HIỆU NỔI BẬT</div>
+          <div id="signalBox" class="stack"></div>
+        </section>
+
+        <section class="panel rail-panel">
+          <div class="panel-title">MÃ CẦN CHÚ Ý</div>
+          <div id="watchlistPanel" class="stack"></div>
+        </section>
+      </aside>
+
+      <!-- CENTER -->
+      <section class="center-stage panel">
+        <div class="center-head">
           <div>
-            <div class="panel-title">Top 10 mã đang được gom</div>
-            <div class="panel-subtitle">Ưu tiên theo hot score từ API</div>
+            <div class="eyebrow">FLOW MAP CORE</div>
+            <h2>Radar Dòng Tiền</h2>
           </div>
-          <div class="panel-pill positive" id="gomCount">0 mã</div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Mã</th>
-                <th>Điểm</th>
-                <th>Net hôm nay</th>
-                <th>Giá trị hôm nay</th>
-                <th>Net 7d</th>
-                <th>Xu hướng</th>
-                <th>Nhãn</th>
-              </tr>
-            </thead>
-            <tbody id="gomTable"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="panel board-panel">
-        <div class="panel-head">
-          <div>
-            <div class="panel-title">Top 10 mã đang bị xả</div>
-            <div class="panel-subtitle">Tách riêng khỏi bảng gom để tránh nhiễu</div>
+          <div class="legend">
+            <span><i class="dot buy"></i> GOM</span>
+            <span><i class="dot sell"></i> XẢ</span>
+            <span><i class="dot neutral"></i> TRUNG TÍNH</span>
           </div>
-          <div class="panel-pill negative" id="xaCount">0 mã</div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Mã</th>
-                <th>Điểm</th>
-                <th>Net hôm nay</th>
-                <th>Giá trị hôm nay</th>
-                <th>Net 7d</th>
-                <th>Xu hướng</th>
-                <th>Nhãn</th>
-              </tr>
-            </thead>
-            <tbody id="xaTable"></tbody>
-          </table>
+
+        <div class="radar-wrap">
+          <div class="radar-core">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+            <div class="crosshair x"></div>
+            <div class="crosshair y"></div>
+            <div class="core-beacon"></div>
+            <div class="core-label">SMART MONEY FLOW</div>
+
+            <svg id="linkLayer" class="link-layer" viewBox="0 0 1000 700" preserveAspectRatio="none"></svg>
+            <div id="radarNodes" class="radar-nodes"></div>
+          </div>
+
+          <div class="floating-card signal-card">
+            <div class="floating-label">MÃ GOM MẠNH NHẤT</div>
+            <div id="surgeGom"></div>
+          </div>
+
+          <div class="floating-card confirm-card">
+            <div class="confirm-label">MÃ XẢ MẠNH NHẤT</div>
+            <div id="surgeXa"></div>
+          </div>
+        </div>
+
+        <div class="bottom-grid">
+          <section class="panel mini-panel">
+            <div class="panel-title">TOP 10 MÃ ĐANG ĐƯỢC GOM</div>
+            <div id="gomTable" class="table-wrap"></div>
+          </section>
+
+          <section class="panel mini-panel">
+            <div class="panel-title">TOP 10 MÃ ĐANG BỊ XẢ</div>
+            <div id="xaTable" class="table-wrap"></div>
+          </section>
         </div>
       </section>
 
-      <section class="panel side-panel">
-        <div class="panel-head">
-          <div class="panel-title">Tín hiệu nổi bật</div>
-        </div>
-        <div class="stack" id="highlights"></div>
-      </section>
+      <!-- RIGHT -->
+      <aside class="right-rail">
+        <section class="panel rail-panel">
+          <div class="panel-title">BẢN ĐỒ NHIỆT DỰA THEO NHÓM NGÀNH</div>
+          <div id="sectorHeat" class="stack"></div>
+        </section>
 
-      <section class="panel side-panel">
-        <div class="panel-head">
-          <div class="panel-title">Nhiệt ngành</div>
-        </div>
-        <div class="stack" id="sectorHeat"></div>
-      </section>
+        <section class="panel rail-panel">
+          <div class="panel-title">LUỒNG CHIẾN LƯỢC</div>
+          <div id="storyline" class="storyline"></div>
+        </section>
 
-      <section class="panel side-panel full-span">
-        <div class="panel-head">
-          <div class="panel-title">Nhật ký API</div>
-        </div>
-        <div id="statusLog" class="status-log"></div>
-      </section>
+        <section class="panel rail-panel compact">
+          <div class="panel-title">NHỊP THỊ TRƯỜNG</div>
+          <div class="spark-wrap">
+            <canvas id="spark1" width="280" height="72"></canvas>
+            <canvas id="spark2" width="280" height="72"></canvas>
+          </div>
+        </section>
+      </aside>
     </main>
+
+    <!-- TICKER -->
+    <footer class="ticker panel panel-thin">
+      <div class="ticker-label">MARKET SIGNAL TICKER</div>
+      <div class="ticker-window">
+        <div id="tickerText" class="ticker-text"></div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- DRAWER -->
+  <div id="detailDrawer" class="detail-drawer">
+    <div class="drawer-card panel">
+      <button id="closeDrawer" class="close-btn">×</button>
+      <div id="drawerContent"></div>
+    </div>
   </div>
 
   <script src="./app.js"></script>
