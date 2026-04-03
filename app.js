@@ -68,13 +68,12 @@ function safeArray(v) {
   return Array.isArray(v) ? v : [];
 }
 
-function sideClassFromTrend(trend) {
-  return trend === "GOM" ? "buy" : trend === "XẢ" ? "sell" : "neutral";
+function safeText(v) {
+  return v == null ? "" : String(v);
 }
 
-function sideText(item) {
-  const net = Number(item.net_value_today || 0);
-  return net >= 0 ? "GOM" : "XẢ";
+function sideClassFromTrend(trend) {
+  return trend === "GOM" ? "buy" : trend === "XẢ" ? "sell" : "neutral";
 }
 
 function normalizedStrength(item, maxValue) {
@@ -83,15 +82,25 @@ function normalizedStrength(item, maxValue) {
   return Math.max(0.08, Math.min(1, v / maxValue));
 }
 
-function buildTopMetrics(data) {
-  const summary = data.summary || {};
-  const cards = [
-    metricCard("DÒNG GOM HÔM NAY", moneyCompact(summary.gom_value_today || 0), "buy-t"),
-    metricCard("DÒNG XẢ HÔM NAY", moneyCompact(summary.xa_value_today_abs || 0), "sell-t"),
-    metricCard("TRẠNG THÁI", safeText(summary.dominant_side || "--"), summary.dominant_side === "GOM" ? "buy-t" : "sell-t"),
-    metricCard("CẬP NHẬT", formatShortTime(data.updated_at), "amber-t"),
-  ];
-  el.topMetrics.innerHTML = cards.join("");
+function dedupeBySymbol(items) {
+  const seen = new Set();
+  return items.filter((item) => {
+    if (!item || seen.has(item.symbol)) return false;
+    seen.add(item.symbol);
+    return true;
+  });
+}
+
+function formatDateTime(v) {
+  if (!v) return "--";
+  return String(v).replace("T", " ");
+}
+
+function formatShortTime(v) {
+  if (!v) return "--";
+  const s = String(v);
+  const match = s.match(/T(\d{2}:\d{2})/);
+  return match ? match[1] : s;
 }
 
 function metricCard(label, value, cls = "") {
@@ -101,6 +110,21 @@ function metricCard(label, value, cls = "") {
       <div class="v ${cls}">${value}</div>
     </div>
   `;
+}
+
+function buildTopMetrics(data) {
+  const summary = data.summary || {};
+  const cards = [
+    metricCard("DÒNG GOM HÔM NAY", moneyCompact(summary.gom_value_today || 0), "buy-t"),
+    metricCard("DÒNG XẢ HÔM NAY", moneyCompact(summary.xa_value_today_abs || 0), "sell-t"),
+    metricCard(
+      "TRẠNG THÁI",
+      safeText(summary.dominant_side || "--"),
+      summary.dominant_side === "GOM" ? "buy-t" : "sell-t"
+    ),
+    metricCard("CẬP NHẬT", formatShortTime(data.updated_at), "amber-t"),
+  ];
+  el.topMetrics.innerHTML = cards.join("");
 }
 
 function buildHero(data) {
@@ -126,7 +150,7 @@ function buildSummaryCards(data) {
     { label: "Mã dẫn đầu xả", value: summary.lead_xa_symbol || "--", cls: "sell-t" },
   ];
 
-  el.summaryCards.innerHTML = items.map(item => `
+  el.summaryCards.innerHTML = items.map((item) => `
     <div class="summary-card">
       <div class="label">${item.label}</div>
       <div class="value ${item.cls || ""}">${item.value}</div>
@@ -165,7 +189,7 @@ function buildSignalBox(data) {
     } : null,
   ].filter(Boolean);
 
-  el.signalBox.innerHTML = items.map(item => `
+  el.signalBox.innerHTML = items.map((item) => `
     <div class="signal-row">
       <div class="row-top">
         <div>${item.title}</div>
@@ -183,9 +207,9 @@ function buildWatchlistPanel(data) {
     ...safeArray(data.xa).slice(0, 5)
   ]).slice(0, 8);
 
-  const maxAbs = Math.max(...picks.map(x => Math.abs(Number(x.net_value_today || 0))), 1);
+  const maxAbs = Math.max(...picks.map((x) => Math.abs(Number(x.net_value_today || 0))), 1);
 
-  el.watchlistPanel.innerHTML = picks.map(item => {
+  el.watchlistPanel.innerHTML = picks.map((item) => {
     const side = Number(item.net_value_today || 0) >= 0 ? "buy" : "sell";
     const width = Math.round(normalizedStrength(item, maxAbs) * 100);
     return `
@@ -226,11 +250,6 @@ function buildSurgeCards(data) {
   ` : `<div class="meta-line"><span>Không có dữ liệu</span></div>`;
 }
 
-function buildTables(data) {
-  el.gomTable.innerHTML = renderTable(safeArray(data.gom), "gom");
-  el.xaTable.innerHTML = renderTable(safeArray(data.xa), "xa");
-}
-
 function renderTable(rows, type) {
   const headline = type === "gom" ? "buy" : "sell";
   return `
@@ -248,7 +267,7 @@ function renderTable(rows, type) {
         </tr>
       </thead>
       <tbody>
-        ${rows.map(row => `
+        ${rows.map((row) => `
           <tr data-symbol="${row.symbol}">
             <td class="sym-cell">${row.symbol}</td>
             <td>${pct(row.hot_score)}</td>
@@ -265,11 +284,16 @@ function renderTable(rows, type) {
   `;
 }
 
+function buildTables(data) {
+  el.gomTable.innerHTML = renderTable(safeArray(data.gom), "gom");
+  el.xaTable.innerHTML = renderTable(safeArray(data.xa), "xa");
+}
+
 function buildSectorHeat(data) {
   const all = [...safeArray(data.gom), ...safeArray(data.xa)];
   const map = new Map();
 
-  all.forEach(item => {
+  all.forEach((item) => {
     const sector = item.sector || "Khác";
     if (!map.has(sector)) {
       map.set(sector, { sector, net: 0, count: 0 });
@@ -280,9 +304,9 @@ function buildSectorHeat(data) {
   });
 
   const sectors = [...map.values()].sort((a, b) => Math.abs(b.net) - Math.abs(a.net));
-  const maxAbs = Math.max(...sectors.map(s => Math.abs(s.net)), 1);
+  const maxAbs = Math.max(...sectors.map((s) => Math.abs(s.net)), 1);
 
-  el.sectorHeat.innerHTML = sectors.map(s => `
+  el.sectorHeat.innerHTML = sectors.map((s) => `
     <div class="sector-row">
       <div class="row-top">
         <span>${s.sector}</span>
@@ -297,23 +321,9 @@ function buildSectorHeat(data) {
   `).join("");
 }
 
-function buildStoryline(data) {
-  const gom = safeArray(data.gom);
-  const xa = safeArray(data.xa);
-
-  const storyItems = [
-    gom[0] ? `<strong>${gom[0].symbol}</strong> đang là mã gom nổi bật nhất với giá trị ròng ${signedMoneyCompact(gom[0].net_value_today)} và nhãn <strong>${gom[0].label.toLowerCase()}</strong>.` : null,
-    xa[0] ? `<strong>${xa[0].symbol}</strong> đang là mã bị xả mạnh nhất với áp lực ròng ${signedMoneyCompact(xa[0].net_value_today)} và nhãn <strong>${xa[0].label.toLowerCase()}</strong>.` : null,
-    buildSectorStory([...gom, ...xa]),
-    buildDominanceStory(data.summary),
-  ].filter(Boolean);
-
-  el.storyline.innerHTML = storyItems.map(s => `<div class="story-item">${s}</div>`).join("");
-}
-
 function buildSectorStory(all) {
   const sectorMap = new Map();
-  all.forEach(item => {
+  all.forEach((item) => {
     const sector = item.sector || "Khác";
     sectorMap.set(sector, (sectorMap.get(sector) || 0) + Number(item.net_value_today || 0));
   });
@@ -327,9 +337,23 @@ function buildDominanceStory(summary) {
   return `Thị trường hiện nghiêng về <strong>${summary.dominant_side || "--"}</strong>. Tổng dòng tiền gom là <strong>${moneyCompact(summary.gom_value_today || 0)}</strong>, trong khi tổng áp lực xả đạt <strong>${moneyCompact(summary.xa_value_today_abs || 0)}</strong>.`;
 }
 
+function buildStoryline(data) {
+  const gom = safeArray(data.gom);
+  const xa = safeArray(data.xa);
+
+  const storyItems = [
+    gom[0] ? `<strong>${gom[0].symbol}</strong> đang là mã gom nổi bật nhất với giá trị ròng ${signedMoneyCompact(gom[0].net_value_today)} và nhãn <strong>${gom[0].label.toLowerCase()}</strong>.` : null,
+    xa[0] ? `<strong>${xa[0].symbol}</strong> đang là mã bị xả mạnh nhất với áp lực ròng ${signedMoneyCompact(xa[0].net_value_today)} và nhãn <strong>${xa[0].label.toLowerCase()}</strong>.` : null,
+    buildSectorStory([...gom, ...xa]),
+    buildDominanceStory(data.summary),
+  ].filter(Boolean);
+
+  el.storyline.innerHTML = storyItems.map((s) => `<div class="story-item">${s}</div>`).join("");
+}
+
 function buildRadar(data) {
-  const radarGom = safeArray(data.gom).slice(0, 4).map(item => ({ ...item, radarSide: "buy" }));
-  const radarXa = safeArray(data.xa).slice(0, 4).map(item => ({ ...item, radarSide: "sell" }));
+  const radarGom = safeArray(data.gom).slice(0, 4).map((item) => ({ ...item, radarSide: "buy" }));
+  const radarXa = safeArray(data.xa).slice(0, 4).map((item) => ({ ...item, radarSide: "sell" }));
   radarItems = [...radarGom, ...radarXa];
 
   const positions = [
@@ -376,15 +400,8 @@ function buildRadar(data) {
 function buildTicker(data) {
   const all = [...safeArray(data.gom).slice(0, 5), ...safeArray(data.xa).slice(0, 5)];
   el.tickerText.textContent = all
-    .map(item => `[${item.label}] ${item.symbol} ${signedMoneyCompact(item.net_value_today)} • ${item.trend_today}/${item.trend_7d}`)
+    .map((item) => `[${item.label}] ${item.symbol} ${signedMoneyCompact(item.net_value_today)} • ${item.trend_today}/${item.trend_7d}`)
     .join("  •  ");
-}
-
-function drawSparks(data) {
-  const gomVals = safeArray(data.gom).map(x => Number(x.hot_score || 0));
-  const xaVals = safeArray(data.xa).map(x => Number(x.hot_score || 0));
-  drawSpark(el.spark1, gomVals.length ? gomVals : [0, 0, 0]);
-  drawSpark(el.spark2, xaVals.length ? xaVals : [0, 0, 0]);
 }
 
 function drawSpark(canvas, values) {
@@ -418,12 +435,36 @@ function drawSpark(canvas, values) {
   ctx.stroke();
 }
 
+function drawSparks(data) {
+  const gomVals = safeArray(data.gom).map((x) => Number(x.hot_score || 0));
+  const xaVals = safeArray(data.xa).map((x) => Number(x.hot_score || 0));
+  drawSpark(el.spark1, gomVals.length ? gomVals : [0, 0, 0]);
+  drawSpark(el.spark2, xaVals.length ? xaVals : [0, 0, 0]);
+}
+
+function openDrawer() {
+  if (!el.detailDrawer) return;
+  el.detailDrawer.classList.add("open");
+  document.body.style.overflow = "hidden";
+
+  const drawerCard = el.detailDrawer.querySelector(".drawer-card");
+  if (drawerCard) drawerCard.scrollTop = 0;
+}
+
+function closeDrawer() {
+  if (!el.detailDrawer) return;
+  el.detailDrawer.classList.remove("open");
+  document.body.style.overflow = "";
+}
+
 function buildDrawer(symbol) {
   const all = [...safeArray(dashboardData?.gom), ...safeArray(dashboardData?.xa)];
-  const item = all.find(x => x.symbol === symbol);
+  const item = all.find((x) => x.symbol === symbol);
   if (!item) return;
 
   const netClass = Number(item.net_value_today || 0) >= 0 ? "buy-t" : "sell-t";
+  const todayClass = sideClassFromTrend(item.trend_today);
+  const trend7dClass = sideClassFromTrend(item.trend_7d);
 
   el.drawerContent.innerHTML = `
     <div class="drawer-grid">
@@ -467,19 +508,21 @@ function buildDrawer(symbol) {
         </div>
         <div class="kpi">
           <div class="label">Trend Today</div>
-          <div class="value ${sideClassFromTrend(item.trend_today) === "buy" ? "buy-t" : sideClassFromTrend(item.trend_today) === "sell" ? "sell-t" : "amber-t"}">${item.trend_today}</div>
+          <div class="value ${todayClass === "buy" ? "buy-t" : todayClass === "sell" ? "sell-t" : "amber-t"}">${item.trend_today}</div>
         </div>
         <div class="kpi">
           <div class="label">Trend 7D</div>
-          <div class="value ${sideClassFromTrend(item.trend_7d) === "buy" ? "buy-t" : sideClassFromTrend(item.trend_7d) === "sell" ? "sell-t" : "amber-t"}">${item.trend_7d}</div>
+          <div class="value ${trend7dClass === "buy" ? "buy-t" : trend7dClass === "sell" ? "sell-t" : "amber-t"}">${item.trend_7d}</div>
         </div>
       </div>
 
-      <div class="story-item"><strong>Diễn giải:</strong> ${item.symbol} hiện được phân loại là <strong>${item.label.toLowerCase()}</strong>, với xu hướng hôm nay là <strong>${item.trend_today}</strong> và xu hướng 7 ngày là <strong>${item.trend_7d}</strong>.</div>
+      <div class="story-item">
+        <strong>Diễn giải:</strong> ${item.symbol} hiện được phân loại là <strong>${item.label.toLowerCase()}</strong>, với xu hướng hôm nay là <strong>${item.trend_today}</strong> và xu hướng 7 ngày là <strong>${item.trend_7d}</strong>.
+      </div>
     </div>
   `;
 
-  el.detailDrawer.classList.add("open");
+  openDrawer();
 }
 
 function bindEvents() {
@@ -491,43 +534,22 @@ function bindEvents() {
   });
 
   if (el.closeDrawer) {
-    el.closeDrawer.addEventListener("click", () => {
-      el.detailDrawer.classList.remove("open");
-    });
+    el.closeDrawer.addEventListener("click", closeDrawer);
   }
 
   if (el.detailDrawer) {
     el.detailDrawer.addEventListener("click", (event) => {
       if (event.target === el.detailDrawer) {
-        el.detailDrawer.classList.remove("open");
+        closeDrawer();
       }
     });
   }
-}
 
-function safeText(v) {
-  return v == null ? "" : String(v);
-}
-
-function dedupeBySymbol(items) {
-  const seen = new Set();
-  return items.filter(item => {
-    if (!item || seen.has(item.symbol)) return false;
-    seen.add(item.symbol);
-    return true;
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && el.detailDrawer?.classList.contains("open")) {
+      closeDrawer();
+    }
   });
-}
-
-function formatDateTime(v) {
-  if (!v) return "--";
-  return String(v).replace("T", " ");
-}
-
-function formatShortTime(v) {
-  if (!v) return "--";
-  const s = String(v);
-  const match = s.match(/T(\d{2}:\d{2})/);
-  return match ? match[1] : s;
 }
 
 async function fetchDashboard() {
@@ -586,6 +608,7 @@ function renderError(error) {
 async function boot() {
   renderLoading();
   bindEvents();
+
   try {
     const data = await fetchDashboard();
     render(data);
